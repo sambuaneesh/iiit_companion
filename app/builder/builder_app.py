@@ -1,11 +1,16 @@
 import streamlit as st
-from app.builder.keyword_manager import KeywordManager
 from app.utils.app_generator import AppGenerator
 from app.config import APP_NAME
 
 class BuilderApp:
     def __init__(self):
-        self.keyword_manager = KeywordManager()
+        self.keywords = {
+            "Environmental": ["temperature", "humidity", "air quality"],
+            "Resource": ["library", "cafeteria", "study rooms"],
+            "Academic": ["assignments", "classes", "grades"],
+            "Event": ["campus events", "clubs", "workshops"],
+            "Health": ["wellness tips", "fitness", "mental health"]
+        }
         self.app_generator = AppGenerator()
 
     def run(self):
@@ -14,7 +19,7 @@ class BuilderApp:
         st.write("Select the features you want in your personalized IIIT Companion app:")
 
         selected_keywords = {}
-        for category, keywords in self.keyword_manager.get_keywords().items():
+        for category, keywords in self.keywords.items():
             st.subheader(category)
             selected_keywords[category] = st.multiselect(f"Select {category} features:", keywords)
 

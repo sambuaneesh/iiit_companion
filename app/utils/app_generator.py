@@ -2,7 +2,6 @@ import os
 import random
 import subprocess
 from app.config import MIN_PORT, MAX_PORT, GENERATED_APPS_DIR
-from app.templates.generated_app_template import GENERATED_APP_TEMPLATE
 
 class AppGenerator:
     def generate_app(self, selected_keywords):
@@ -23,34 +22,121 @@ class AppGenerator:
         return random.randint(MIN_PORT, MAX_PORT)
 
     def _generate_app_content(self, selected_keywords):
-        return GENERATED_APP_TEMPLATE.format(
-            environmental=self._get_environmental_content(selected_keywords["Environmental"]),
-            resource=self._get_resource_content(selected_keywords["Resource"]),
-            academic=self._get_academic_content(selected_keywords["Academic"]),
-            event=self._get_event_content(selected_keywords["Event"]),
-            health=self._get_health_content(selected_keywords["Health"])
-        )
+        content = """
+import streamlit as st
+import requests
+
+st.set_page_config(page_title="My IIIT Companion", page_icon="🏫", layout="wide")
+
+st.title("My IIIT Companion")
+
+"""
+        if selected_keywords["Environmental"]:
+            content += self._get_environmental_content(selected_keywords["Environmental"])
+        if selected_keywords["Resource"]:
+            content += self._get_resource_content(selected_keywords["Resource"])
+        if selected_keywords["Academic"]:
+            content += self._get_academic_content(selected_keywords["Academic"])
+        if selected_keywords["Event"]:
+            content += self._get_event_content(selected_keywords["Event"])
+        if selected_keywords["Health"]:
+            content += self._get_health_content(selected_keywords["Health"])
+
+        return content
 
     def _run_app(self, app_file_path, port):
         subprocess.Popen(["streamlit", "run", app_file_path, "--server.port", str(port)])
 
-    # Helper methods for generating content for each microservice
     def _get_environmental_content(self, keywords):
-        # Implementation for environmental content
-        pass
+        content = """
+st.header("Campus Environment")
+env_data = requests.get("http://localhost:8001/data").json()
+col1, col2, col3 = st.columns(3)
+"""
+        if "temperature" in keywords:
+            content += 'col1.metric("Temperature", f"{env_data["temperature"]}°C")\n'
+        if "humidity" in keywords:
+            content += 'col2.metric("Humidity", f"{env_data["humidity"]}%")\n'
+        if "air quality" in keywords:
+            content += 'col3.metric("Air Quality Index", env_data["air_quality"]["value"], delta=env_data["air_quality"]["status"])\n'
+        return content
 
     def _get_resource_content(self, keywords):
-        # Implementation for resource content
-        pass
+        content = """
+st.header("Campus Resources")
+resource_data = requests.get("http://localhost:8002/data").json()
+col1, col2, col3 = st.columns(3)
+"""
+        if "library" in keywords:
+            content += 'col1.metric("Library Availability", resource_data["library_availability"])\n'
+        if "cafeteria" in keywords:
+            content += 'col2.write("Today\'s Cafeteria Menu:")\n'
+            content += 'col2.write(", ".join(resource_data["cafeteria_menu"]))\n'
+        if "study rooms" in keywords:
+            content += 'col3.metric("Study Rooms", resource_data["study_rooms"])\n'
+        return content
 
     def _get_academic_content(self, keywords):
-        # Implementation for academic content
-        pass
+        content = """
+st.header("Academic Information")
+academic_data = requests.get("http://localhost:8003/data").json()
+col1, col2, col3 = st.columns(3)
+"""
+        if "assignments" in keywords:
+            content += """
+col1.subheader("Upcoming Assignments")
+for assignment in academic_data["assignments"]:
+    col1.write(f"- {assignment}")
+"""
+        if "classes" in keywords:
+            content += """
+col2.subheader("Class Schedule")
+for class_ in academic_data["classes"]:
+    col2.write(f"- {class_}")
+"""
+        if "grades" in keywords:
+            content += """
+col3.subheader("Recent Grades")
+for subject, grade in academic_data["grades"].items():
+    col3.write(f"{subject}: {grade}")
+"""
+        return content
 
     def _get_event_content(self, keywords):
-        # Implementation for event content
-        pass
+        content = """
+st.header("Campus Life")
+event_data = requests.get("http://localhost:8004/data").json()
+col1, col2, col3 = st.columns(3)
+"""
+        if "campus events" in keywords:
+            content += """
+col1.subheader("Upcoming Events")
+for event in event_data["campus_events"]:
+    col1.info(event)
+"""
+        if "clubs" in keywords:
+            content += """
+col2.subheader("Club Activities")
+for activity in event_data["club_activities"]:
+    col2.info(activity)
+"""
+        if "workshops" in keywords:
+            content += """
+col3.subheader("Workshops")
+col3.info(event_data["workshops"])
+"""
+        return content
 
     def _get_health_content(self, keywords):
-        # Implementation for health content
-        pass
+        content = """
+st.header("Health & Wellness")
+health_data = requests.get("http://localhost:8005/data").json()
+col1, col2, col3 = st.columns(3)
+"""
+        if "wellness tips" in keywords:
+            content += 'col1.success(f"Wellness Tip: {health_data["wellness_tip"]}")\n'
+        if "fitness" in keywords:
+            content += 'col2.success(f"Fitness Suggestion: {health_data["fitness_suggestion"]}")\n'
+        if "mental health" in keywords:
+            content += 'col3.success(f"Mental Health Resource: {health_data["mental_health_resource"]}")\n'
+        return content

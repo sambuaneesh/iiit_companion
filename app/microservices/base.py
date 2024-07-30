@@ -1,10 +1,11 @@
-from abc import ABC, abstractmethod
+from fastapi import FastAPI
+import uvicorn
 
-class MicroserviceBase(ABC):
-    @abstractmethod
-    def get_data(self):
-        pass
+class MicroserviceBase:
+    def __init__(self, name: str, port: int):
+        self.app = FastAPI()
+        self.name = name
+        self.port = port
 
-    @abstractmethod
-    def render(self, col):
-        pass
+    def start(self):
+        uvicorn.run(self.app, host="0.0.0.0", port=self.port)

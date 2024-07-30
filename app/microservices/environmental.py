@@ -1,13 +1,19 @@
-import random
 from app.microservices.base import MicroserviceBase
+from app.config import ENVIRONMENTAL_PORT
+import random
+
 
 class EnvironmentalService(MicroserviceBase):
-    def get_data(self):
-        return {
-            "temperature": round(random.uniform(20, 30), 1),
-            "humidity": round(random.uniform(30, 70), 1),
-            "air_quality": self._get_air_quality()
-        }
+    def __init__(self):
+        super().__init__("Environmental", ENVIRONMENTAL_PORT)
+
+        @self.app.get("/data")
+        async def get_data():
+            return {
+                "temperature": round(random.uniform(20, 30), 1),
+                "humidity": round(random.uniform(30, 70), 1),
+                "air_quality": self._get_air_quality()
+            }
 
     def _get_air_quality(self):
         aqi = random.randint(0, 500)
@@ -25,8 +31,6 @@ class EnvironmentalService(MicroserviceBase):
             status = "Hazardous"
         return {"value": aqi, "status": status}
 
-    def render(self, col):
-        data = self.get_data()
-        col.metric("Temperature", f"{data['temperature']}°C")
-        col.metric("Humidity", f"{data['humidity']}%")
-        col.metric("Air Quality Index", data['air_quality']['value'], delta=data['air_quality']['status'])
+def start_environmental_service():
+    service = EnvironmentalService()
+    service.start()
