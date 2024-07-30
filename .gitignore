@@ -1,2 +1,6 @@
 iiit_companion_*/
 __pycache__/
+generated_app*/
+testing/
+build/*
+iiit_companion.egg-info/
