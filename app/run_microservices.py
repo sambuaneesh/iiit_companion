@@ -1,34 +1,34 @@
 import os
-import sys
+import importlib
 import threading
+from app.config import MICROSERVICES_DIR
+from app.utils.logger import setup_logger
 
-# Add the project root to the Python path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, project_root)
+logger = setup_logger('run_microservices')
 
-from app.microservices.environmental import start_environmental_service
-from app.microservices.resource import start_resource_service
-from app.microservices.academic import start_academic_service
-from app.microservices.event import start_event_service
-from app.microservices.health import start_health_service
+def run_microservice(module_name, service_name):
+    try:
+        module = importlib.import_module(module_name)
+        start_function = getattr(module, f"start_{service_name}_service")
+        start_function()
+    except Exception as e:
+        logger.error(f"Error starting {service_name} service: {str(e)}")
 
-def run_microservices():
-    services = [
-        start_environmental_service,
-        start_resource_service,
-        start_academic_service,
-        start_event_service,
-        start_health_service
-    ]
-
+def run_all_microservices():
     threads = []
-    for service in services:
-        thread = threading.Thread(target=service)
-        thread.start()
-        threads.append(thread)
+    for category in os.listdir(MICROSERVICES_DIR):
+        category_path = os.path.join(MICROSERVICES_DIR, category)
+        if os.path.isdir(category_path):
+            for service in os.listdir(category_path):
+                if service.endswith('.py'):
+                    service_name = os.path.splitext(service)[0]
+                    module_name = f"app.microservices.{category}.{service_name}"
+                    thread = threading.Thread(target=run_microservice, args=(module_name, service_name))
+                    thread.start()
+                    threads.append(thread)
 
     for thread in threads:
         thread.join()
 
 if __name__ == "__main__":
-    run_microservices()
+    run_all_microservices()

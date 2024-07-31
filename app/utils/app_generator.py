@@ -1,7 +1,8 @@
 import os
+import importlib
 import random
 import subprocess
-from app.config import MIN_PORT, MAX_PORT, GENERATED_APPS_DIR
+from app.config import MIN_PORT, MAX_PORT, GENERATED_APPS_DIR, microservice_ports
 from app.utils.logger import setup_logger
 
 class AppGenerator:
@@ -37,19 +38,24 @@ st.set_page_config(page_title="My IIIT Companion", page_icon="🏫", layout="wid
 st.title("My IIIT Companion")
 
 """
-        for topic, keywords in selected_keywords.items():
-            if topic == "Environmental":
-                content += self._get_environmental_content(keywords)
-            elif topic == "Resource":
-                content += self._get_resource_content(keywords)
-            elif topic == "Academic":
-                content += self._get_academic_content(keywords)
-            elif topic == "Event":
-                content += self._get_event_content(keywords)
-            elif topic == "Health":
-                content += self._get_health_content(keywords)
+        for category, services in selected_keywords.items():
+            content += f"\nst.header('{category}')\n"
+            for service in services:
+                module_name = f"app.microservices.{category}.{service}"
+                try:
+                    module = importlib.import_module(module_name)
+                    service_class = getattr(module, f"{service.capitalize()}Service")
+                    port = microservice_ports[f"{category.lower()}_{service}"]
+                    content += f"""
+data = requests.get("http://localhost:{port}/data").json()
+st.subheader('{service.capitalize()}')
+st.write(data)
+"""
+                except Exception as e:
+                    self.logger.error(f"Error importing {module_name}: {str(e)}")
 
         return content
+
 
     def _run_app(self, app_file_path, port):
         self.logger.info(f"Running app at port {port}")

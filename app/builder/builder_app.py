@@ -1,20 +1,27 @@
+import os
 import streamlit as st
 from app.utils.app_generator import AppGenerator
-from app.config import APP_NAME
+from app.config import APP_NAME, MICROSERVICES_DIR
 from app.utils.logger import setup_logger
 
 class BuilderApp:
     def __init__(self):
-        self.keyword_tree = {
-            "Environmental": ["temperature", "humidity", "air quality"],
-            "Resource": ["library", "cafeteria", "study rooms"],
-            "Academic": ["assignments", "classes", "grades"],
-            "Event": ["campus events", "clubs", "workshops"],
-            "Health": ["wellness tips", "fitness", "mental health"]
-        }
+        self.logger = setup_logger('BuilderApp')
+        self.keyword_tree = self._discover_services()
         self.all_keywords = self.flatten_keywords()
         self.app_generator = AppGenerator()
-        self.logger = setup_logger('BuilderApp')
+
+    def _discover_services(self):
+        keyword_tree = {}
+        for category in os.listdir(MICROSERVICES_DIR):
+            category_path = os.path.join(MICROSERVICES_DIR, category)
+            if os.path.isdir(category_path):
+                keyword_tree[category] = [
+                    os.path.splitext(service)[0]
+                    for service in os.listdir(category_path)
+                    if service.endswith('.py')
+                ]
+        return keyword_tree
 
     def flatten_keywords(self):
         return [topic for topic in self.keyword_tree.keys()] + \
