@@ -4,3 +4,4 @@ generated_app*/
 testing/
 build/*
 iiit_companion.egg-info/
+*.egg*
