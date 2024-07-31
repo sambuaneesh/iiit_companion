@@ -1,18 +1,22 @@
 import os
-import importlib
 import random
 import subprocess
-from app.config import MIN_PORT, MAX_PORT, GENERATED_APPS_DIR, microservice_ports
+import app.config as config
 from app.utils.logger import setup_logger
 
 class AppGenerator:
     def __init__(self):
-            self.logger = setup_logger('AppGenerator')
+        self.logger = setup_logger('AppGenerator')
 
     def generate_app(self, selected_keywords):
         self.logger.info(f"Generating app with keywords: {selected_keywords}")
+
+        if config.GENERATED_APPS_DIR is None:
+            self.logger.error("GENERATED_APPS_DIR is None. Make sure config.set_paths() and config.setup() have been called.")
+            raise ValueError("GENERATED_APPS_DIR is not set. Configuration may not have been initialized properly.")
+
         port = self._get_available_port()
-        app_dir = os.path.join(GENERATED_APPS_DIR, f"app_{port}")
+        app_dir = os.path.join(config.GENERATED_APPS_DIR, f"app_{port}")
         os.makedirs(app_dir, exist_ok=True)
 
         app_content = self._generate_app_content(selected_keywords)
@@ -22,16 +26,19 @@ class AppGenerator:
             f.write(app_content)
 
         self._run_app(app_file_path, port)
-        self.logger.info(f"Generated app at: {app_file_path}")
         return f"http://localhost:{port}"
 
     def _get_available_port(self):
-        return random.randint(MIN_PORT, MAX_PORT)
+        return random.randint(config.MIN_PORT, config.MAX_PORT)
 
     def _generate_app_content(self, selected_keywords):
         content = """
 import streamlit as st
 import requests
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="My IIIT Companion", page_icon="🏫", layout="wide")
 
@@ -41,117 +48,34 @@ st.title("My IIIT Companion")
         for category, services in selected_keywords.items():
             content += f"\nst.header('{category}')\n"
             for service in services:
-                module_name = f"app.microservices.{category}.{service}"
-                try:
-                    module = importlib.import_module(module_name)
-                    service_class = getattr(module, f"{service.capitalize()}Service")
-                    port = microservice_ports[f"{category.lower()}_{service}"]
+                port_key = f"{category.lower()}_{service.lower()}"
+                if port_key in config.microservice_ports:
+                    port = config.microservice_ports[port_key]
                     content += f"""
-data = requests.get("http://localhost:{port}/data").json()
-st.subheader('{service.capitalize()}')
-st.write(data)
+try:
+    logger.info(f"Attempting to connect to {service.capitalize()} service on port {port}")
+    response = requests.get("http://localhost:{port}/data", timeout=5)
+    response.raise_for_status()
+    data = response.json()
+    st.subheader('{service.capitalize()}')
+    st.write(data)
+    logger.info(f"Successfully connected to {service.capitalize()} service")
+except requests.exceptions.ConnectionError as e:
+    logger.error(f"Connection error for {service.capitalize()} service: {{e}}")
+    st.error(f"Unable to connect to {service.capitalize()} service. Please ensure the service is running.")
+except requests.exceptions.Timeout as e:
+    logger.error(f"Timeout error for {service.capitalize()} service: {{e}}")
+    st.error(f"Connection to {service.capitalize()} service timed out. The service might be overloaded or not responding.")
+except requests.exceptions.RequestException as e:
+    logger.error(f"Request error for {service.capitalize()} service: {{e}}")
+    st.error(f"An error occurred while connecting to {service.capitalize()} service: {{str(e)}}")
 """
-                except Exception as e:
-                    self.logger.error(f"Error importing {module_name}: {str(e)}")
+                else:
+                    self.logger.error(f"Port not found for service: {port_key}")
+                    content += f"\nst.error('Configuration error for {service.capitalize()} service.')\n"
 
-        return content
-
+            return content
 
     def _run_app(self, app_file_path, port):
-        self.logger.info(f"Running app at port {port}")
-        import subprocess
+        self.logger.info(f"Running app at {app_file_path} on port {port}")
         subprocess.Popen(["streamlit", "run", app_file_path, "--server.port", str(port)])
-
-    def _get_environmental_content(self, keywords):
-        content = """
-st.header("Campus Environment")
-env_data = requests.get("http://localhost:8001/data").json()
-col1, col2, col3 = st.columns(3)
-"""
-        if "temperature" in keywords:
-            content += 'col1.metric("Temperature", f"{env_data["temperature"]}°C")\n'
-        if "humidity" in keywords:
-            content += 'col2.metric("Humidity", f"{env_data["humidity"]}%")\n'
-        if "air quality" in keywords:
-            content += 'col3.metric("Air Quality Index", env_data["air_quality"]["value"], delta=env_data["air_quality"]["status"])\n'
-        return content
-
-    def _get_resource_content(self, keywords):
-        content = """
-st.header("Campus Resources")
-resource_data = requests.get("http://localhost:8002/data").json()
-col1, col2, col3 = st.columns(3)
-"""
-        if "library" in keywords:
-            content += 'col1.metric("Library Availability", resource_data["library_availability"])\n'
-        if "cafeteria" in keywords:
-            content += 'col2.write("Today\'s Cafeteria Menu:")\n'
-            content += 'col2.write(", ".join(resource_data["cafeteria_menu"]))\n'
-        if "study rooms" in keywords:
-            content += 'col3.metric("Study Rooms", resource_data["study_rooms"])\n'
-        return content
-
-    def _get_academic_content(self, keywords):
-        content = """
-st.header("Academic Information")
-academic_data = requests.get("http://localhost:8003/data").json()
-col1, col2, col3 = st.columns(3)
-"""
-        if "assignments" in keywords:
-            content += """
-col1.subheader("Upcoming Assignments")
-for assignment in academic_data["assignments"]:
-    col1.write(f"- {assignment}")
-"""
-        if "classes" in keywords:
-            content += """
-col2.subheader("Class Schedule")
-for class_ in academic_data["classes"]:
-    col2.write(f"- {class_}")
-"""
-        if "grades" in keywords:
-            content += """
-col3.subheader("Recent Grades")
-for subject, grade in academic_data["grades"].items():
-    col3.write(f"{subject}: {grade}")
-"""
-        return content
-
-    def _get_event_content(self, keywords):
-        content = """
-st.header("Campus Life")
-event_data = requests.get("http://localhost:8004/data").json()
-col1, col2, col3 = st.columns(3)
-"""
-        if "campus events" in keywords:
-            content += """
-col1.subheader("Upcoming Events")
-for event in event_data["campus_events"]:
-    col1.info(event)
-"""
-        if "clubs" in keywords:
-            content += """
-col2.subheader("Club Activities")
-for activity in event_data["club_activities"]:
-    col2.info(activity)
-"""
-        if "workshops" in keywords:
-            content += """
-col3.subheader("Workshops")
-col3.info(event_data["workshops"])
-"""
-        return content
-
-    def _get_health_content(self, keywords):
-        content = """
-st.header("Health & Wellness")
-health_data = requests.get("http://localhost:8005/data").json()
-col1, col2, col3 = st.columns(3)
-"""
-        if "wellness tips" in keywords:
-            content += 'col1.success(f"Wellness Tip: {health_data["wellness_tip"]}")\n'
-        if "fitness" in keywords:
-            content += 'col2.success(f"Fitness Suggestion: {health_data["fitness_suggestion"]}")\n'
-        if "mental health" in keywords:
-            content += 'col3.success(f"Mental Health Resource: {health_data["mental_health_resource"]}")\n'
-        return content

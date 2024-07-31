@@ -1,35 +1,41 @@
 import os
+from typing import Dict, Optional
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+APP_NAME: str = "IIIT Companion"
+BUILDER_PORT: int = 8501
+MIN_PORT: int = 9000
+MAX_PORT: int = 9999
 
-# App settings
-APP_NAME = "IIIT Companion"
-DEBUG = os.getenv("DEBUG", "False") == "True"
-
-BASE_MICROSERVICE_PORT = 9000
-MICROSERVICES_DIR = os.path.join(os.path.dirname(__file__), 'microservices')
-GENERATED_APPS_DIR = os.path.join(os.path.dirname(__file__), 'generated_apps')
+# These paths will be set dynamically when the config is loaded
+MICROSERVICES_DIR: Optional[str] = None
+GENERATED_APPS_DIR: Optional[str] = None
 
 # Dynamically allocate ports for microservices
-microservice_ports = {}
-current_port = BASE_MICROSERVICE_PORT
+microservice_ports: Dict[str, int] = {}
+current_port: int = MIN_PORT
 
-for category in os.listdir(MICROSERVICES_DIR):
-    category_path = os.path.join(MICROSERVICES_DIR, category)
-    if os.path.isdir(category_path):
-        for service in os.listdir(category_path):
-            if service.endswith('.py'):
-                service_name = os.path.splitext(service)[0]
-                microservice_ports[f"{category.lower()}_{service_name}"] = current_port
-                current_port += 1
+def set_paths(base_path: str) -> None:
+    global MICROSERVICES_DIR, GENERATED_APPS_DIR
+    MICROSERVICES_DIR = os.path.join(base_path, 'microservices')
+    GENERATED_APPS_DIR = os.path.join(base_path, 'generated_apps')
 
-# TODO: use this to set the port for the builder app
-# Builder app port
-BUILDER_PORT = 8000
+def discover_microservices() -> None:
+    global microservice_ports, current_port
+    if MICROSERVICES_DIR is None:
+        raise ValueError("MICROSERVICES_DIR is not set. Call set_paths() first.")
+    for category in os.listdir(MICROSERVICES_DIR):
+        category_path = os.path.join(MICROSERVICES_DIR, category)
+        if os.path.isdir(category_path):
+            for service in os.listdir(category_path):
+                if service.endswith('.py') and not service.startswith('__'):
+                    service_name = os.path.splitext(service)[0]
+                    port_key = f"{category.lower()}_{service_name.lower()}"
+                    microservice_ports[port_key] = current_port
+                    current_port += 1
 
-# Generated app settings
-MIN_PORT = 9000
-MAX_PORT = 9999
-
-# Ensure the generated apps directory exists
-os.makedirs(GENERATED_APPS_DIR, exist_ok=True)
+# This function will be called after setting the paths
+def setup() -> None:
+    if GENERATED_APPS_DIR is None:
+        raise ValueError("GENERATED_APPS_DIR is not set. Call set_paths() first.")
+    discover_microservices()
+    os.makedirs(GENERATED_APPS_DIR, exist_ok=True)
