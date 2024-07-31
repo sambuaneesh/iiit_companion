@@ -1,6 +1,7 @@
 import streamlit as st
 from app.utils.app_generator import AppGenerator
 from app.config import APP_NAME
+from app.utils.logger import setup_logger
 
 class BuilderApp:
     def __init__(self):
@@ -13,16 +14,17 @@ class BuilderApp:
         }
         self.all_keywords = self.flatten_keywords()
         self.app_generator = AppGenerator()
+        self.logger = setup_logger('BuilderApp')
 
     def flatten_keywords(self):
         return [topic for topic in self.keyword_tree.keys()] + \
                [keyword for keywords in self.keyword_tree.values() for keyword in keywords]
 
     def run(self):
+        self.logger.info("Starting BuilderApp")
         st.title(f"{APP_NAME} Builder")
 
         st.write("Select the features you want in your personalized IIIT Companion app:")
-        st.write("You can select main topics or specific features. Selecting a topic will include all its features.")
 
         selected_keywords = st.multiselect("Select features:", self.all_keywords)
 
@@ -38,6 +40,7 @@ class BuilderApp:
                 st.error("Please select at least one feature to create your app.")
 
     def process_selected_keywords(self, selected_keywords):
+        self.logger.info(f"Processing selected keywords: {selected_keywords}")
         processed_keywords = {topic: [] for topic in self.keyword_tree}
 
         for keyword in selected_keywords:
@@ -50,6 +53,7 @@ class BuilderApp:
                     if keyword in features:
                         processed_keywords[topic].append(keyword)
 
+        self.logger.info(f"Processed keywords: {processed_keywords}")
         # Remove empty topics
         processed_keywords = {k: v for k, v in processed_keywords.items() if v}
 

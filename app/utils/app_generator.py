@@ -2,9 +2,14 @@ import os
 import random
 import subprocess
 from app.config import MIN_PORT, MAX_PORT, GENERATED_APPS_DIR
+from app.utils.logger import setup_logger
 
 class AppGenerator:
+    def __init__(self):
+            self.logger = setup_logger('AppGenerator')
+
     def generate_app(self, selected_keywords):
+        self.logger.info(f"Generating app with keywords: {selected_keywords}")
         port = self._get_available_port()
         app_dir = os.path.join(GENERATED_APPS_DIR, f"app_{port}")
         os.makedirs(app_dir, exist_ok=True)
@@ -16,6 +21,7 @@ class AppGenerator:
             f.write(app_content)
 
         self._run_app(app_file_path, port)
+        self.logger.info(f"Generated app at: {app_file_path}")
         return f"http://localhost:{port}"
 
     def _get_available_port(self):
@@ -46,6 +52,7 @@ st.title("My IIIT Companion")
         return content
 
     def _run_app(self, app_file_path, port):
+        self.logger.info(f"Running app at port {port}")
         import subprocess
         subprocess.Popen(["streamlit", "run", app_file_path, "--server.port", str(port)])
 

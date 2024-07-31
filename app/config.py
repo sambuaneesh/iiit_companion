@@ -13,6 +13,7 @@ ACADEMIC_PORT = 8003
 EVENT_PORT = 8004
 HEALTH_PORT = 8005
 
+# TODO: use this to set the port for the builder app
 # Builder app port
 BUILDER_PORT = 8000
 
