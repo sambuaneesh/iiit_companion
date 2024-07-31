@@ -31,20 +31,22 @@ st.set_page_config(page_title="My IIIT Companion", page_icon="🏫", layout="wid
 st.title("My IIIT Companion")
 
 """
-        if selected_keywords["Environmental"]:
-            content += self._get_environmental_content(selected_keywords["Environmental"])
-        if selected_keywords["Resource"]:
-            content += self._get_resource_content(selected_keywords["Resource"])
-        if selected_keywords["Academic"]:
-            content += self._get_academic_content(selected_keywords["Academic"])
-        if selected_keywords["Event"]:
-            content += self._get_event_content(selected_keywords["Event"])
-        if selected_keywords["Health"]:
-            content += self._get_health_content(selected_keywords["Health"])
+        for topic, keywords in selected_keywords.items():
+            if topic == "Environmental":
+                content += self._get_environmental_content(keywords)
+            elif topic == "Resource":
+                content += self._get_resource_content(keywords)
+            elif topic == "Academic":
+                content += self._get_academic_content(keywords)
+            elif topic == "Event":
+                content += self._get_event_content(keywords)
+            elif topic == "Health":
+                content += self._get_health_content(keywords)
 
         return content
 
     def _run_app(self, app_file_path, port):
+        import subprocess
         subprocess.Popen(["streamlit", "run", app_file_path, "--server.port", str(port)])
 
     def _get_environmental_content(self, keywords):
