@@ -81,6 +81,8 @@ def run_all_microservices():
                         )
                         thread.start()
                         threads.append(thread)
+                        # Add a small delay between starting services
+                        time.sleep(0.1)
                     else:
                         logger.error(f"Port not found for service: {port_key}")
 
