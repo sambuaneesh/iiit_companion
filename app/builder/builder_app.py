@@ -4,12 +4,17 @@ from app.utils.app_generator import AppGenerator
 import app.config as config
 from app.utils.logger import setup_logger
 
+
 class BuilderApp:
     def __init__(self):
-        self.logger = setup_logger('BuilderApp')
+        self.logger = setup_logger("BuilderApp")
         if config.MICROSERVICES_DIR is None:
-            self.logger.error("MICROSERVICES_DIR is None. Make sure config.set_paths() and config.setup() have been called.")
-            raise ValueError("MICROSERVICES_DIR is not set. Configuration may not have been initialized properly.")
+            self.logger.error(
+                "MICROSERVICES_DIR is None. Make sure config.set_paths() and config.setup() have been called."
+            )
+            raise ValueError(
+                "MICROSERVICES_DIR is not set. Configuration may not have been initialized properly."
+            )
         self.keyword_tree = self._discover_services(config.MICROSERVICES_DIR)
         self.all_keywords = self.flatten_keywords(self.keyword_tree)
         self.app_generator = AppGenerator()
@@ -21,11 +26,11 @@ class BuilderApp:
             return tree
         for item in os.listdir(directory):
             item_path = os.path.join(directory, item)
-            if os.path.isdir(item_path) and not item.startswith('__'):
+            if os.path.isdir(item_path) and not item.startswith("__"):
                 category = item
                 tree[category] = []
                 for service in os.listdir(item_path):
-                    if service.endswith('.py') and not service.startswith('__'):
+                    if service.endswith(".py") and not service.startswith("__"):
                         service_name = os.path.splitext(service)[0]
                         tree[category].append(service_name)
         return tree
@@ -40,7 +45,9 @@ class BuilderApp:
     def run(self):
         st.title(f"{config.APP_NAME} Builder")
 
-        st.write("Select the features you want in your personalized IIIT Companion app:")
+        st.write(
+            "Select the features you want in your personalized IIIT Companion app:"
+        )
         st.write("Selecting a category will include all its services.")
 
         selected_keywords = st.multiselect("Select features:", self.all_keywords)
@@ -50,7 +57,9 @@ class BuilderApp:
                 processed_keywords = self.process_selected_keywords(selected_keywords)
                 if processed_keywords:
                     app_url = self.app_generator.generate_app(processed_keywords)
-                    st.success(f"Your personalized {config.APP_NAME} app has been created! Access it at: {app_url}")
+                    st.success(
+                        f"Your personalized {config.APP_NAME} app has been created! Access it at: {app_url}"
+                    )
                 else:
                     st.error("No valid features selected. Please try again.")
             else:
