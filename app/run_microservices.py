@@ -71,7 +71,7 @@ def discover_and_run_services(
                     f"{path_prefix}{item.lower()}_",
                 )
             )
-        elif item.endswith(".py") and not item.startswith("__"):
+        elif item.endswith(".py") and not item.startswith("__") and item != "base.py":
             service_name = os.path.splitext(item)[0]
             module_name = f"{module_prefix}.{service_name}"
             port_key = f"{path_prefix}{service_name.lower()}"
