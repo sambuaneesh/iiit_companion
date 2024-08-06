@@ -56,35 +56,47 @@ def run_microservice(module_name, service_name, port):
         logger.error(f"Error starting {service_name} service: {str(e)}", exc_info=True)
 
 
+def discover_and_run_services(
+    directory, module_prefix="app.microservices", path_prefix=""
+):
+    threads = []
+    for item in os.listdir(directory):
+        item_path = os.path.join(directory, item)
+        if os.path.isdir(item_path):
+            # Recursively process subdirectories
+            threads.extend(
+                discover_and_run_services(
+                    item_path,
+                    f"{module_prefix}.{item}",
+                    f"{path_prefix}{item.lower()}_",
+                )
+            )
+        elif item.endswith(".py") and not item.startswith("__"):
+            service_name = os.path.splitext(item)[0]
+            module_name = f"{module_prefix}.{service_name}"
+            port_key = f"{path_prefix}{service_name.lower()}"
+            port = config.get_port(port_key)
+            if port is not None:
+                logger.info(
+                    f"Starting thread for {service_name} service on port {port}"
+                )
+                thread = threading.Thread(
+                    target=run_microservice, args=(module_name, service_name, port)
+                )
+                thread.start()
+                threads.append(thread)
+                time.sleep(0.1)  # Small delay between starting services
+            else:
+                logger.error(f"Port not found for service: {port_key}")
+    return threads
+
+
 def run_all_microservices():
     # Clear the existing port map
     if os.path.exists(PORT_MAP_FILE):
         os.remove(PORT_MAP_FILE)
 
-    threads = []
-    for category in os.listdir(config.MICROSERVICES_DIR):
-        category_path = os.path.join(config.MICROSERVICES_DIR, category)
-        if os.path.isdir(category_path):
-            for service in os.listdir(category_path):
-                if service.endswith(".py") and not service.startswith("__"):
-                    service_name = os.path.splitext(service)[0]
-                    module_name = f"app.microservices.{category}.{service_name}"
-                    port_key = f"{category.lower()}_{service_name.lower()}"
-                    if port_key in config.microservice_ports:
-                        port = config.microservice_ports[port_key]
-                        logger.info(
-                            f"Starting thread for {service_name} service on port {port}"
-                        )
-                        thread = threading.Thread(
-                            target=run_microservice,
-                            args=(module_name, service_name, port),
-                        )
-                        thread.start()
-                        threads.append(thread)
-                        # Add a small delay between starting services
-                        time.sleep(0.1)
-                    else:
-                        logger.error(f"Port not found for service: {port_key}")
+    threads = discover_and_run_services(config.MICROSERVICES_DIR)
 
     for thread in threads:
         thread.join()

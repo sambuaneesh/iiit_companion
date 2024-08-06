@@ -23,24 +23,30 @@ def set_paths(base_path: str) -> None:
     GENERATED_APPS_DIR = os.path.join(base_path, "generated_apps")
 
 
-def discover_microservices() -> None:
+def discover_microservices(directory=None, prefix=""):
     global microservice_ports, current_port
-    if MICROSERVICES_DIR is None:
-        raise ValueError("MICROSERVICES_DIR is not set. Call set_paths() first.")
-    for category in os.listdir(MICROSERVICES_DIR):
-        category_path = os.path.join(MICROSERVICES_DIR, category)
-        if os.path.isdir(category_path):
-            for service in os.listdir(category_path):
-                if service.endswith(".py") and not service.startswith("__"):
-                    service_name = os.path.splitext(service)[0]
-                    port_key = f"{category.lower()}_{service_name.lower()}"
-                    microservice_ports[port_key] = current_port
-                    current_port += 1
+    if directory is None:
+        if MICROSERVICES_DIR is None:
+            raise ValueError("MICROSERVICES_DIR is not set. Call set_paths() first.")
+        directory = MICROSERVICES_DIR
+
+    for item in os.listdir(directory):
+        item_path = os.path.join(directory, item)
+        if os.path.isdir(item_path):
+            discover_microservices(item_path, f"{prefix}{item.lower()}_")
+        elif item.endswith(".py") and not item.startswith("__"):
+            service_name = os.path.splitext(item)[0]
+            port_key = f"{prefix}{service_name.lower()}"
+            microservice_ports[port_key] = current_port
+            current_port += 1
 
 
-# This function will be called after setting the paths
-def setup() -> None:
-    if GENERATED_APPS_DIR is None:
-        raise ValueError("GENERATED_APPS_DIR is not set. Call set_paths() first.")
+def setup():
+    if APP_DIR is None or MICROSERVICES_DIR is None or GENERATED_APPS_DIR is None:
+        raise ValueError("Paths are not set. Call set_paths() first.")
     discover_microservices()
     os.makedirs(GENERATED_APPS_DIR, exist_ok=True)
+
+
+def get_port(service_name: str) -> int:
+    return microservice_ports.get(service_name.lower(), None)
