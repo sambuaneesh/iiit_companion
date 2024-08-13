@@ -1,58 +1,47 @@
 # Installation Guide
 
-This guide will walk you through the process of setting up the IIIT Companion application on your local machine.
+If you are a Windows user, make sure to execute the following commands before proceeding with the installation:
+
+In Command Prompt:
+```
+set PYTHONUTF8=1
+```
+
+In PowerShell:
+```
+$env:PYTHONUTF8 = "1"
+```
+
+This will help counter any UTF-8 encoding issues. If it doesn't work, then execute this command
+```
+chcp 65001
+```
 
 ## Prerequisites
 
-- Python 3.7 or higher
-- pip (Python package manager)
-- Git (optional, for cloning the repository)
+- Conda or Miniconda (for managing environments)
 
-## Step 1: Clone the Repository
+## Set Up the Environment Using Conda
 
-If you have Git installed, you can clone the repository using the following command:
+It's recommended to use Conda or Miniconda for managing environments. This keeps dependencies required by different projects separate.
 
-```
-git clone https://github.com/your-username/iiit-companion.git
-cd iiit-companion
-```
-
-Alternatively, you can download the project as a ZIP file from the GitHub repository and extract it to your desired location.
-
-## Step 2: Create a Virtual Environment (Optional but Recommended)
-
-It's a good practice to create a virtual environment for your Python projects. This keeps dependencies required by different projects separate.
+Create the environment using the provided `environment.yml` file:
 
 ```
-python -m venv venv
+conda env create -f environment.yml
 ```
 
-Activate the virtual environment:
-
-- On Windows:
-  ```
-  venv\Scripts\activate
-  ```
-- On macOS and Linux:
-  ```
-  source venv/bin/activate
-  ```
-
-## Step 3: Install Dependencies
-
-Install the required Python packages using pip:
+Activate the environment:
 
 ```
-pip install -r requirements.txt
+conda activate iot
 ```
 
-This will install all the necessary dependencies, including Streamlit, FastAPI, and other required libraries.
-
-## Step 4: Configuration
+## Step 3: Configuration
 
 Review the `app/config.py` file and adjust any settings if needed. You can modify port numbers, app name, or add any additional configuration parameters here.
 
-## Step 5: Run the Application
+## Step 4: Run the Application
 
 To start the IIIT Companion application, run the following command from the project root directory:
 

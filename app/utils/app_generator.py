@@ -63,7 +63,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # Set the working directory to the app directory
-os.chdir('{app_dir}')
+os.chdir(r'{app_dir}')
 
 st.set_page_config(page_title="My IIIT Companion", page_icon="🏫", layout="wide")
 
