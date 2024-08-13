@@ -38,7 +38,7 @@ class AppGenerator:
         app_content = self._generate_app_content(selected_keywords, app_dir)
         app_file_path = os.path.join(app_dir, "app.py")
 
-        with open(app_file_path, "w") as f:
+        with open(app_file_path, "w", encoding="utf-8") as f:
             f.write(app_content)
 
         self._run_app(app_file_path, port)

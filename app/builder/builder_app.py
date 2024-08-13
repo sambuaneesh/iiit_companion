@@ -3,6 +3,7 @@ import streamlit as st
 from app.utils.app_generator import AppGenerator
 import app.config as config
 from app.utils.logger import setup_logger
+from chatbot import take_input
 
 
 class BuilderApp:
@@ -51,6 +52,24 @@ class BuilderApp:
         st.write("Selecting a category will include all its services.")
 
         selected_keywords = st.multiselect("Select features:", self.all_keywords)
+        self.logger.info("Starting BuilderApp")
+        st.title(f"{APP_NAME} Builder")
+        if "conversation" not in st.session_state:
+            st.session_state.conversation = []
+        st.write("Your personalized IIIT Companion app:")
+
+        user_input = st.text_input(
+            "Enter a sentence describing your desired app features:"
+        )
+        if user_input:
+            selected_keywords = take_input(user_input)
+            # print(selected_keywords)
+            # Convert the string to a list of keywords
+            while selected_keywords is None:
+                st.session_state.conversation.append(selected_keywords)
+                selected_keywords = take_input(selected_keywords)
+            self.logger.info(f"Selected Keywords: {selected_keywords}")
+            st.write(f"Selected Keywords: {selected_keywords}")
 
         if st.button("Create My IIIT Companion App"):
             if selected_keywords:
@@ -63,7 +82,7 @@ class BuilderApp:
                 else:
                     st.error("No valid features selected. Please try again.")
             else:
-                st.error("Please select at least one feature to create your app.")
+                st.error("Please enter a sentence to describe your desired features.")
 
     def process_selected_keywords(self, selected_keywords):
         processed_keywords = {}
@@ -81,3 +100,9 @@ class BuilderApp:
 
         self.logger.info(f"Processed keywords: {processed_keywords}")
         return processed_keywords
+
+
+# Run the BuilderApp
+if __name__ == "__main__":
+    app = BuilderApp()
+    app.run()
