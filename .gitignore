@@ -7,3 +7,5 @@ iiit_companion.egg-info/
 *.egg*
 venv/
 service_ports.json
+query_logs.csv
+.env
