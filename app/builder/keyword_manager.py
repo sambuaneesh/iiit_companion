@@ -1,12 +1,4 @@
 class KeywordManager:
-    def __init__(self):
-        self.keywords = {
-            "Environmental": ["temperature", "humidity", "air quality"],
-            "Resource": ["library", "cafeteria", "study rooms"],
-            "Academic": ["assignments", "classes", "grades"],
-            "Event": ["campus events", "clubs", "workshops"],
-            "Health": ["wellness tips", "fitness", "mental health"]
-        }
 
     def get_keywords(self):
         return self.keywords
