@@ -17,7 +17,7 @@ class AppGenerator:
         app_content = self._generate_app_content(selected_keywords)
         app_file_path = os.path.join(app_dir, "app.py")
 
-        with open(app_file_path, "w") as f:
+        with open(app_file_path, "w" , encoding='utf-8') as f:
             f.write(app_content)
 
         self._run_app(app_file_path, port)
@@ -38,15 +38,15 @@ st.title("My IIIT Companion")
 
 """
         for topic, keywords in selected_keywords.items():
-            if topic == "Environmental":
+            if topic == "environmental":
                 content += self._get_environmental_content(keywords)
-            elif topic == "Resource":
+            elif topic == "resource":
                 content += self._get_resource_content(keywords)
-            elif topic == "Academic":
+            elif topic == "academic":
                 content += self._get_academic_content(keywords)
-            elif topic == "Event":
+            elif topic == "event":
                 content += self._get_event_content(keywords)
-            elif topic == "Health":
+            elif topic == "health":
                 content += self._get_health_content(keywords)
 
         return content
